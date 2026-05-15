@@ -38,20 +38,20 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Install directly from GitHub with `uv`:
 
 ```bash
-uv pip install git+https://github.com/CIAT-DAPA/aclimate-sdk.git
+uv pip install git+https://github.com/CIAT-DAPA/aclimatesdkpy.git
 ```
 
 Inside another `uv` project, add it as a dependency:
 
 ```bash
-uv add git+https://github.com/CIAT-DAPA/aclimate-sdk.git
+uv add git+https://github.com/CIAT-DAPA/aclimatesdkpy.git
 ```
 
 For local development:
 
 ```bash
-git clone https://github.com/CIAT-DAPA/aclimate-sdk.git
-cd aclimate-sdk
+git clone https://github.com/CIAT-DAPA/aclimatesdkpy.git
+cd aclimatesdkpy
 uv sync --all-extras --dev
 ```
 
@@ -59,7 +59,10 @@ Run commands inside the managed environment:
 
 ```bash
 uv run python examples/basic_usage.py
+
 uv run pytest
+uv run pytest tests/test_client.py
+
 uv run ruff check .
 ```
 
@@ -106,7 +109,7 @@ The SDK automatically obtains and refreshes a client-credentials token when `cli
 
 ## 🌎 Supported Interfaces
 
-Only the requested endpoints are included:
+Endpoints are included:
 
 | SDK method | API endpoint |
 |---|---|
@@ -212,7 +215,7 @@ Currently supported languages are:
 ## 🧱 Project Structure
 
 ```text
-aclimate-sdk/
+aclimatesdkpy/
 ├── .python-version
 ├── pyproject.toml
 ├── uv.lock
