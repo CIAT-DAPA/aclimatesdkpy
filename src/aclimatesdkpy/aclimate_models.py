@@ -1,9 +1,5 @@
-"""
-AClimate SDK — Modelos Pydantic
-Derivados directamente del spec openapi.json de api.aclimate.org
-"""
-
 from __future__ import annotations
+
 from datetime import date, datetime
 from typing import Any, Optional
 from pydantic import BaseModel, Field

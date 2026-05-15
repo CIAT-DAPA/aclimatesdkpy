@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-  { name = "AClimate SDK Contributors" }
+  { name = "Steven Sotelo" }
 ]
 keywords = ["aclimate", "climate", "agriculture", "sdk", "api", "python"]
 classifiers = [
