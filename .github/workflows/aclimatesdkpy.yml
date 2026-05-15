@@ -1,4 +1,4 @@
-name: AClimate SDK CI/CD
+name: AClimate SDK PY CI/CD
 
 on:
   push:
