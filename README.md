@@ -1,4 +1,4 @@
-# AClimate SDK
+# AClimate SDK PY
 
 ## 🏷️ Version and Tags
 
@@ -9,7 +9,7 @@
 
 ## 📌 Introduction
 
-AClimate SDK is an asynchronous Python client for consuming endpoints from the AClimate v3 API. It provides typed methods for authentication, countries, administrative regions, locations, historical climate data, climatology, agroclimatic indicators, GeoServer point data, and available periods.
+AClimate SDK PY is an asynchronous Python client for consuming endpoints from the AClimate v3 API. It provides typed methods for authentication, countries, administrative regions, locations, historical climate data, climatology, agroclimatic indicators, GeoServer point data, and available periods.
 
 The SDK is designed to be installed directly from GitHub and used by applications, APIs, notebooks, and LLM/RAG workflows that need structured access to AClimate climate and agroclimatic data.
 
@@ -59,10 +59,7 @@ Run commands inside the managed environment:
 
 ```bash
 uv run python examples/basic_usage.py
-
 uv run pytest
-uv run pytest tests/test_client.py
-
 uv run ruff check .
 ```
 
