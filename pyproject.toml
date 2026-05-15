@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-  { name = "AClimate SDK Contributors" }
+  { name = "Steven Sotelo" }
 ]
 keywords = ["aclimate", "climate", "agriculture", "sdk", "api", "python"]
 classifiers = [
@@ -62,7 +62,7 @@ package = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-aclimate_sdk = ["py.typed"]
+aclimatesdkpy = ["py.typed"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

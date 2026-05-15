@@ -35,17 +35,18 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ## 📦 Installation
 
+Inside another `uv` project, add it as a dependency:
+
+```bash
+uv add git+https://github.com/CIAT-DAPA/aclimatesdkpy.git
+```
+
 Install directly from GitHub with `uv`:
 
 ```bash
 uv pip install git+https://github.com/CIAT-DAPA/aclimatesdkpy.git
 ```
 
-Inside another `uv` project, add it as a dependency:
-
-```bash
-uv add git+https://github.com/CIAT-DAPA/aclimatesdkpy.git
-```
 
 For local development:
 
@@ -63,13 +64,27 @@ uv run pytest
 uv run ruff check .
 ```
 
+## 📦 Uninstall
+
+If you use uv add:
+
+```bash
+uv remove aclimatesdkpy
+```
+
+If you use uv pip install:
+
+```bash
+uv pip uninstall aclimatesdkpy
+```
+
 ---
 
 ## ⚙️ Basic Usage
 
 ```python
 import asyncio
-from aclimate_sdk import AClimateClient
+from aclimatesdkpy import AClimateClient
 
 async def main():
     async with AClimateClient(
@@ -181,7 +196,7 @@ records = await client.get_historical_daily_by_date_range_all_measures(
 The `ContextBuilder` can generate narrative context in English or Spanish. English is the default.
 
 ```python
-from aclimate_sdk import ContextBuilder
+from aclimatesdkpy import ContextBuilder
 
 # English output
 builder = ContextBuilder(language="en")
@@ -218,7 +233,7 @@ aclimatesdkpy/
 ├── uv.lock
 ├── README.md
 ├── src/
-│   └── aclimate_sdk/
+│   └── aclimatesdkpy/
 │       ├── __init__.py
 │       ├── aclimate_api_error.py
 │       ├── aclimate_auth_error.py

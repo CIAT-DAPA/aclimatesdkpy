@@ -11,9 +11,9 @@ import httpx
 from pydantic import TypeAdapter
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from aclimate_sdk.aclimate_api_error import AClimateAPIError
-from aclimate_sdk.aclimate_auth_error import AClimateAuthError
-from aclimate_sdk.aclimate_models import (
+from aclimatesdkpy.aclimate_api_error import AClimateAPIError
+from aclimatesdkpy.aclimate_auth_error import AClimateAuthError
+from aclimatesdkpy.aclimate_models import (
     Admin1,
     ClimateHistoricalClimatology,
     ClimateHistoricalDaily,
@@ -32,7 +32,7 @@ from aclimate_sdk.aclimate_models import (
     MinMaxMonthlyRecord,
     TokenResponse,
 )
-from aclimate_sdk.utils import csv, date_str, ensure_list
+from aclimatesdkpy.utils import csv, date_str, ensure_list
 
 logger = logging.getLogger(__name__)
 

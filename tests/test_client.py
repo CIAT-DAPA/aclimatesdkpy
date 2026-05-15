@@ -1,4 +1,4 @@
-from aclimate_sdk.utils import csv, date_str
+from  aclimatesdkpy.utils import csv, date_str
 
 
 def test_csv_from_iterable() -> None:
@@ -15,8 +15,8 @@ def test_date_str_from_none() -> None:
 
 from datetime import date
 import pytest
-from aclimate_sdk.aclimate_models import ClimateHistoricalDaily, Country
-from aclimate_sdk.context_builder import ContextBuilder
+from aclimatesdkpy.aclimate_models import ClimateHistoricalDaily, Country
+from aclimatesdkpy.context_builder import ContextBuilder
 
 
 def test_context_builder_default_language_is_english() -> None:
