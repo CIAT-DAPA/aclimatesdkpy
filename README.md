@@ -35,17 +35,18 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ## 📦 Installation
 
+Inside another `uv` project, add it as a dependency:
+
+```bash
+uv add git+https://github.com/CIAT-DAPA/aclimatesdkpy.git
+```
+
 Install directly from GitHub with `uv`:
 
 ```bash
 uv pip install git+https://github.com/CIAT-DAPA/aclimatesdkpy.git
 ```
 
-Inside another `uv` project, add it as a dependency:
-
-```bash
-uv add git+https://github.com/CIAT-DAPA/aclimatesdkpy.git
-```
 
 For local development:
 
@@ -61,6 +62,20 @@ Run commands inside the managed environment:
 uv run python examples/basic_usage.py
 uv run pytest
 uv run ruff check .
+```
+
+## 📦 Uninstall
+
+If you use uv add:
+
+```bash
+uv remove aclimatesdkpy
+```
+
+If you use uv pip install:
+
+```bash
+uv pip uninstall aclimatesdkpy
 ```
 
 ---
