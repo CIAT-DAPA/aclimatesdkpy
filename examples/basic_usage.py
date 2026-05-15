@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from aclimate_sdk import AClimateClient, ContextBuilder
+from aclimatesdkpy import AClimateClient, ContextBuilder
 
 
 async def main() -> None:
