@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Literal
 
-from aclimate_sdk.aclimate_models import (
+from aclimatesdkpy.aclimate_models import (
     ClimateHistoricalClimatology,
     ClimateHistoricalDaily,
     ClimateHistoricalIndicatorRecord,

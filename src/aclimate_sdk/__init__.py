@@ -1,7 +1,7 @@
-from aclimate_sdk.aclimate_api_error import AClimateAPIError
-from aclimate_sdk.aclimate_auth_error import AClimateAuthError
-from aclimate_sdk.aclimate_client import AClimateClient, close_client, get_client
-from aclimate_sdk.context_builder import ContextBuilder
+from aclimatesdkpy.aclimate_api_error import AClimateAPIError
+from aclimatesdkpy.aclimate_auth_error import AClimateAuthError
+from aclimatesdkpy.aclimate_client import AClimateClient, close_client, get_client
+from aclimatesdkpy.context_builder import ContextBuilder
 
 __all__ = [
     "AClimateAPIError",
