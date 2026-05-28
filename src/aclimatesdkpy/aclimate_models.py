@@ -112,7 +112,7 @@ class LocationWithData(BaseModel):
 
 # ─── Climate Historical ───────────────────────────────────────────────────────
 
-class ClimateHistoricalDaily(BaseModel):
+class ClimateHistoricalDateRecord(BaseModel):
     id: int
     location_id: int
     location_name: Optional[str] = None
@@ -124,7 +124,7 @@ class ClimateHistoricalDaily(BaseModel):
     value: float
 
 
-class ClimateHistoricalMonthly(BaseModel):
+class ClimateHistoricalMonthRecord(BaseModel):
     id: int
     location_id: int
     location_name: Optional[str] = None
@@ -136,22 +136,9 @@ class ClimateHistoricalMonthly(BaseModel):
     value: float
 
 
-class ClimateHistoricalClimatology(BaseModel):
-    """Normal climática histórica — promedio por mes para una medida."""
+class MinMaxDateRecord(BaseModel):
     id: int
-    location_id: int
-    location_name: Optional[str] = None
-    measure_id: Optional[int] = None
-    measure_name: Optional[str] = None
-    measure_short_name: Optional[str] = None
-    measure_unit: Optional[str] = None
-    month: int
-    value: float
-
-
-class MinMaxDailyRecord(BaseModel):
-    measure_id: int
-    measure_name: Optional[str] = None
+    name: Optional[str] = None
     location_id: int
     location_name: Optional[str] = None
     min_value: float
@@ -160,20 +147,9 @@ class MinMaxDailyRecord(BaseModel):
     max_date: Optional[datetime] = None
 
 
-class MinMaxMonthlyRecord(BaseModel):
-    measure_id: int
-    measure_name: Optional[str] = None
-    location_id: int
-    location_name: Optional[str] = None
-    min_value: float
-    min_date: Optional[datetime] = None
-    max_value: float
-    max_date: Optional[datetime] = None
-
-
-class MinMaxClimatologyRecord(BaseModel):
-    measure_id: int
-    measure_name: Optional[str] = None
+class MinMaxMonthRecord(BaseModel):
+    id: int
+    name: Optional[str] = None
     location_id: int
     location_name: Optional[str] = None
     min_value: float
@@ -251,12 +227,4 @@ class ClimateHistoricalIndicatorRecord(BaseModel):
     end_date: Optional[str] = None
 
 
-class MinMaxIndicatorRecord(BaseModel):
-    indicator_id: int
-    indicator_name: Optional[str] = None
-    location_id: int
-    location_name: Optional[str] = None
-    min_value: float
-    min_date: Optional[datetime] = None
-    max_value: float
-    max_date: Optional[datetime] = None
+

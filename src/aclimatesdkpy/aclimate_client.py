@@ -15,10 +15,9 @@ from aclimatesdkpy.aclimate_api_error import AClimateAPIError
 from aclimatesdkpy.aclimate_auth_error import AClimateAuthError
 from aclimatesdkpy.aclimate_models import (
     Admin1,
-    ClimateHistoricalClimatology,
-    ClimateHistoricalDaily,
+    ClimateHistoricalDateRecord,
     ClimateHistoricalIndicatorRecord,
-    ClimateHistoricalMonthly,
+    ClimateHistoricalMonthRecord,
     Country,
     Indicator,
     IndicatorCategory,
@@ -26,10 +25,8 @@ from aclimatesdkpy.aclimate_models import (
     IndicatorWithFeatures,
     Location,
     LocationWithData,
-    MinMaxClimatologyRecord,
-    MinMaxDailyRecord,
-    MinMaxIndicatorRecord,
-    MinMaxMonthlyRecord,
+    MinMaxDateRecord,
+    MinMaxMonthRecord,
     TokenResponse,
 )
 from aclimatesdkpy.utils import csv, date_str, ensure_list
@@ -162,24 +159,24 @@ class AClimateClient:
         return TypeAdapter(list[LocationWithData]).validate_python(await self.get("/locations/by-country-ids-with-data", country_ids=csv(country_ids), days=days))
 
     # Historical daily/monthly
-    async def get_historical_daily_minmax_by_location(self, location_id: int) -> list[MinMaxDailyRecord]:
-        return TypeAdapter(list[MinMaxDailyRecord]).validate_python(await self.get("/historical-daily/minmax-by-location", location_id=location_id))
+    async def get_historical_daily_minmax_by_location(self, location_id: int) -> list[MinMaxDateRecord]:
+        return TypeAdapter(list[MinMaxDateRecord]).validate_python(await self.get("/historical-daily/minmax-by-location", location_id=location_id))
 
-    async def get_historical_daily_by_date_range_all_measures(self, location_ids: str | int | Iterable[int], start_date: str | date | None = None, end_date: str | date | None = None) -> list[ClimateHistoricalDaily]:
-        return TypeAdapter(list[ClimateHistoricalDaily]).validate_python(await self.get("/historical-daily/by-date-range-all-measures", location_ids=csv(location_ids), start_date=date_str(start_date), end_date=date_str(end_date)))
+    async def get_historical_daily_by_date_range_all_measures(self, location_ids: str | int | Iterable[int], start_date: str | date | None = None, end_date: str | date | None = None) -> list[ClimateHistoricalDateRecord]:
+        return TypeAdapter(list[ClimateHistoricalDateRecord]).validate_python(await self.get("/historical-daily/by-date-range-all-measures", location_ids=csv(location_ids), start_date=date_str(start_date), end_date=date_str(end_date)))
 
-    async def get_historical_monthly_by_date_range_all_measures(self, location_ids: str | int | Iterable[int], start_date: str | date | None = None, end_date: str | date | None = None) -> list[ClimateHistoricalMonthly]:
-        return TypeAdapter(list[ClimateHistoricalMonthly]).validate_python(await self.get("/historical-monthly/by-date-range-all-measures", location_ids=csv(location_ids), start_date=date_str(start_date), end_date=date_str(end_date)))
+    async def get_historical_monthly_by_date_range_all_measures(self, location_ids: str | int | Iterable[int], start_date: str | date | None = None, end_date: str | date | None = None) -> list[ClimateHistoricalMonthRecord]:
+        return TypeAdapter(list[ClimateHistoricalMonthRecord]).validate_python(await self.get("/historical-monthly/by-date-range-all-measures", location_ids=csv(location_ids), start_date=date_str(start_date), end_date=date_str(end_date)))
 
-    async def get_historical_monthly_minmax_by_location(self, location_id: int) -> list[MinMaxMonthlyRecord]:
-        return TypeAdapter(list[MinMaxMonthlyRecord]).validate_python(await self.get("/historical-monthly/minmax-by-location", location_id=location_id))
+    async def get_historical_monthly_minmax_by_location(self, location_id: int) -> list[MinMaxDateRecord]:
+        return TypeAdapter(list[MinMaxDateRecord]).validate_python(await self.get("/historical-monthly/minmax-by-location", location_id=location_id))
 
     # Climatology
-    async def get_climatology_minmax_by_location(self, location_id: int) -> list[MinMaxClimatologyRecord]:
-        return TypeAdapter(list[MinMaxClimatologyRecord]).validate_python(await self.get("/climatology/minmax-by-location", location_id=location_id))
+    async def get_climatology_minmax_by_location(self, location_id: int) -> list[MinMaxMonthRecord]:
+        return TypeAdapter(list[MinMaxMonthRecord]).validate_python(await self.get("/climatology/minmax-by-location", location_id=location_id))
 
-    async def get_climatology_by_month_range_location_ids_all_measures(self, location_ids: str | int | Iterable[int], start_month: int, end_month: int) -> list[ClimateHistoricalClimatology]:
-        return TypeAdapter(list[ClimateHistoricalClimatology]).validate_python(await self.get("/climatology/by-month-range-location-ids-all-measures", location_ids=csv(location_ids), start_month=start_month, end_month=end_month))
+    async def get_climatology_by_month_range_location_ids_all_measures(self, location_ids: str | int | Iterable[int], start_month: int, end_month: int) -> list[ClimateHistoricalMonthRecord]:
+        return TypeAdapter(list[ClimateHistoricalMonthRecord]).validate_python(await self.get("/climatology/by-month-range-location-ids-all-measures", location_ids=csv(location_ids), start_month=start_month, end_month=end_month))
 
     # Indicators
     async def get_indicator_by_location_id(self, location_id: int) -> list[ClimateHistoricalIndicatorRecord]:
@@ -188,8 +185,8 @@ class AClimateClient:
     async def get_indicator_by_location_date_period(self, location_id: int, start_date: str | date, end_date: str | date, period: str) -> list[ClimateHistoricalIndicatorRecord]:
         return TypeAdapter(list[ClimateHistoricalIndicatorRecord]).validate_python(ensure_list(await self.get("/indicator/by-location-date-period", location_id=location_id, start_date=date_str(start_date), end_date=date_str(end_date), period=period)))
 
-    async def get_indicator_minmax_by_location(self, location_id: int) -> list[MinMaxIndicatorRecord]:
-        return TypeAdapter(list[MinMaxIndicatorRecord]).validate_python(await self.get("/indicator/minmax-by-location", location_id=location_id))
+    async def get_indicator_minmax_by_location(self, location_id: int) -> list[MinMaxDateRecord]:
+        return TypeAdapter(list[MinMaxDateRecord]).validate_python(await self.get("/indicator/minmax-by-location", location_id=location_id))
 
     async def get_indicators_by_category_id(self, category_id: int) -> list[Indicator]:
         return TypeAdapter(list[Indicator]).validate_python(await self.get("/indicator-mng/by-category-id", category_id=category_id))
