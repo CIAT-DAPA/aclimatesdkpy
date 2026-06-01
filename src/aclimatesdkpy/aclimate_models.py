@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any, Optional
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -31,18 +31,6 @@ class Admin1(BaseModel):
     country_id: int
     country_name: str
     country_iso2: str
-
-
-class Admin2(BaseModel):
-    id: int
-    name: str
-    ext_id: str
-    admin1_id: Optional[int] = None
-    admin1_name: Optional[str] = None
-    admin1_ext_id: Optional[str] = None
-    country_id: Optional[int] = None
-    country_name: Optional[str] = None
-    country_iso2: Optional[str] = None
 
 
 # ─── Locations ───────────────────────────────────────────────────────────────
@@ -112,7 +100,7 @@ class LocationWithData(BaseModel):
 
 # ─── Climate Historical ───────────────────────────────────────────────────────
 
-class ClimateHistoricalDaily(BaseModel):
+class ClimateHistoricalDateRecord(BaseModel):
     id: int
     location_id: int
     location_name: Optional[str] = None
@@ -124,20 +112,7 @@ class ClimateHistoricalDaily(BaseModel):
     value: float
 
 
-class ClimateHistoricalMonthly(BaseModel):
-    id: int
-    location_id: int
-    location_name: Optional[str] = None
-    measure_id: Optional[int] = None
-    measure_name: Optional[str] = None
-    measure_short_name: Optional[str] = None
-    measure_unit: Optional[str] = None
-    date: date
-    value: float
-
-
-class ClimateHistoricalClimatology(BaseModel):
-    """Normal climática histórica — promedio por mes para una medida."""
+class ClimateHistoricalMonthRecord(BaseModel):
     id: int
     location_id: int
     location_name: Optional[str] = None
@@ -149,9 +124,9 @@ class ClimateHistoricalClimatology(BaseModel):
     value: float
 
 
-class MinMaxDailyRecord(BaseModel):
-    measure_id: int
-    measure_name: Optional[str] = None
+class MinMaxDateRecord(BaseModel):
+    id: int
+    name: Optional[str] = None
     location_id: int
     location_name: Optional[str] = None
     min_value: float
@@ -160,20 +135,9 @@ class MinMaxDailyRecord(BaseModel):
     max_date: Optional[datetime] = None
 
 
-class MinMaxMonthlyRecord(BaseModel):
-    measure_id: int
-    measure_name: Optional[str] = None
-    location_id: int
-    location_name: Optional[str] = None
-    min_value: float
-    min_date: Optional[datetime] = None
-    max_value: float
-    max_date: Optional[datetime] = None
-
-
-class MinMaxClimatologyRecord(BaseModel):
-    measure_id: int
-    measure_name: Optional[str] = None
+class MinMaxMonthRecord(BaseModel):
+    id: int
+    name: Optional[str] = None
     location_id: int
     location_name: Optional[str] = None
     min_value: float
@@ -189,8 +153,6 @@ class IndicatorCategory(BaseModel):
     name: str
     description: Optional[str] = None
     enable: bool
-    registered_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
 
 
 class Indicator(BaseModel):
@@ -207,33 +169,19 @@ class Indicator(BaseModel):
     indicator_category_id: int
     description: Optional[str] = None
     enable: bool
-    registered_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
 
 
 class IndicatorFeature(BaseModel):
     """Recomendación o característica asociada a un indicador en un país."""
     id: int
-    country_indicator_id: int
+    country_indicator_id: Optional[int] = None
     title: str
     description: Optional[str] = None
     type: str            # "recommendation" | "feature"
 
 
 class IndicatorWithFeatures(Indicator):
-    features: list[Any] = Field(default_factory=list)
-
-
-class CountryIndicator(BaseModel):
-    """Configuración de un indicador para un país específico."""
-    id: int
-    country_id: int
-    indicator_id: int
-    spatial_forecast: bool
-    spatial_climate: bool
-    location_forecast: bool
-    location_climate: bool
-    criteria: Optional[dict[str, Any]] = None
+    features: list[IndicatorFeature] = Field(default_factory=list)
 
 
 class ClimateHistoricalIndicatorRecord(BaseModel):
@@ -247,16 +195,8 @@ class ClimateHistoricalIndicatorRecord(BaseModel):
     location_name: Optional[str] = None
     value: float
     period: Optional[str] = None       # "monthly" | "yearly"
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
 
-class MinMaxIndicatorRecord(BaseModel):
-    indicator_id: int
-    indicator_name: Optional[str] = None
-    location_id: int
-    location_name: Optional[str] = None
-    min_value: float
-    min_date: Optional[datetime] = None
-    max_value: float
-    max_date: Optional[datetime] = None
+
