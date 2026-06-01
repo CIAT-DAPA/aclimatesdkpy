@@ -67,23 +67,25 @@ uv pip uninstall aclimatesdkpy
 
 ```python
 import asyncio
-from aclimatesdkpy import AClimateClient
+from aclimatesdkpy.aclimate_client import get_client
 
-async def main():
-    async with AClimateClient(
-        client_id="YOUR_CLIENT_ID",
-        client_secret="YOUR_CLIENT_SECRET",
-    ) as client:
-        countries = await client.get_countries()
-        for country in countries:
-            print(country.id, country.name, country.iso2)
+api_base_url = "https://api.aclimate.org/"
+client_id = ""
+client_secret = ""
 
-asyncio.run(main())
+client = await get_client(
+        base_url=api_base_url,
+        client_id=client_id,
+        client_secret=client_secret,
+    )
 ```
 
 You can also use an existing bearer token:
 
 ```python
+import asyncio
+from aclimatesdkpy import AClimateClient
+
 async with AClimateClient(access_token="YOUR_ACCESS_TOKEN") as client:
     countries = await client.get_countries()
 ```
@@ -93,7 +95,6 @@ async with AClimateClient(access_token="YOUR_ACCESS_TOKEN") as client:
 ## 🔐 Authentication Methods
 
 ```python
-await client.login(username="user@example.com", password="password")
 await client.get_client_token()
 await client.validate_token()
 ```
@@ -108,9 +109,8 @@ Endpoints are included:
 
 | SDK method | API endpoint |
 |---|---|
-| `login` | `/auth/login` |
-| `validate_token` | `/auth/token/validate` |
 | `get_client_token` | `/auth/get-client-token` |
+| `validate_token` | `/auth/token/validate` |
 | `get_countries` | `/countries` |
 | `get_countries_by_name` | `/countries/by-name` |
 | `get_admin1_by_country_ids` | `/admin1/by-country-ids` |
@@ -224,8 +224,6 @@ aclimatesdkpy/
 │       ├── aclimate_models.py
 │       ├── context_builder.py
 │       └── utils.py
-├── examples/
-│   └── basic_usage.py
 └── tests/
     └── test_client.py
 ```

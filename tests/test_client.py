@@ -68,70 +68,6 @@ def reset_global_client_state(client_module):
     client_module._client = None
     client_module._client_started = False
 
-
-@pytest.mark.asyncio
-async def test_login_uses_environment_credentials_and_sets_token(monkeypatch, client_module):
-    """Validates login with credentials loaded from environment variables."""
-    monkeypatch.setenv("ACLIMATE_USERNAME", "qa-user")
-    monkeypatch.setenv("ACLIMATE_PASSWORD", "qa-password")
-
-    fake_http = FakeAsyncHTTPClient(
-        post_responses=[FakeResponse(200, {"access_token": "login-token", "expires_in": 3600})]
-    )
-
-    client = client_module.AClimateClient(base_url="https://example.test")
-    client._http = fake_http
-
-    result = await client.login(
-        username=os.environ["ACLIMATE_USERNAME"],
-        password=os.environ["ACLIMATE_PASSWORD"],
-    )
-
-    assert result == {"access_token": "login-token", "expires_in": 3600}
-    assert client._token == "login-token"
-    assert fake_http.post_calls == [
-        {
-            "url": "https://example.test/auth/login",
-            "json": {"username": "qa-user", "password": "qa-password"},
-        }
-    ]
-
-
-@pytest.mark.asyncio
-async def test_get_client_token_uses_environment_credentials_and_returns_validated_response(
-    monkeypatch, client_module
-):
-    """Validates client-token authentication using environment variables."""
-    monkeypatch.setenv("ACLIMATE_CLIENT_ID", "env-client-id")
-    monkeypatch.setenv("ACLIMATE_CLIENT_SECRET", "env-client-secret")
-
-    class FakeTokenResponse:
-        @classmethod
-        def model_validate(cls, data: dict[str, Any]) -> dict[str, Any]:
-            return {"validated": data}
-
-    monkeypatch.setattr(client_module, "TokenResponse", FakeTokenResponse)
-
-    fake_http = FakeAsyncHTTPClient(
-        post_responses=[FakeResponse(200, {"access_token": "client-token", "expires_in": 600})]
-    )
-
-    client = client_module.AClimateClient(base_url="https://example.test")
-    client._http = fake_http
-
-    result = await client.get_client_token(
-        client_id=os.environ["ACLIMATE_CLIENT_ID"],
-        client_secret=os.environ["ACLIMATE_CLIENT_SECRET"],
-    )
-
-    assert result == {"validated": {"access_token": "client-token", "expires_in": 600}}
-    assert client._token == "client-token"
-    assert fake_http.post_calls[0]["json"] == {
-        "client_id": "env-client-id",
-        "client_secret": "env-client-secret",
-    }
-
-
 @pytest.mark.asyncio
 async def test_get_client_token_uses_constructor_credentials_when_arguments_are_omitted(
     client_module, monkeypatch
@@ -342,12 +278,12 @@ async def test_post_raises_api_error_for_failed_response(client_module):
 
 
 @pytest.mark.asyncio
-async def test_get_geoserver_point_data_delegates_to_authenticated_post(client_module):
+async def test_post_geoserver_point_data_delegates_to_authenticated_post(client_module):
     """Validates the geoserver point-data convenience method."""
     client = client_module.AClimateClient()
     client.post = AsyncMock(return_value={"value": 42})
 
-    result = await client.get_geoserver_point_data(
+    result = await client.post_geoserver_point_data(
         latitude=4.65,
         longitude=-74.08,
         variable="rainfall",

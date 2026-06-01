@@ -69,15 +69,17 @@ class AClimateClient:
             await self._http.aclose()
             self._http = None
 
-    async def login(self, username: str, password: str) -> dict[str, Any]:
-        data = await self._post_public("/auth/login", {"username": username, "password": password})
-        self._set_token_from_response(data)
-        return data
+    # Se comenta el siguiten metodo por que se asume que es un cliente el que
+    # debe usar el sdk y no un usuario final, por lo que el login se hace a través de la obtención del token de cliente
+    #async def login(self, username: str, password: str) -> dict[str, Any]:
+    #    data = await self._post_public("/auth/login", {"username": username, "password": password})
+    #    self._set_token_from_response(data)
+    #    return data
 
-    async def get_client_token(self, client_id: str | None = None, client_secret: str | None = None) -> TokenResponse:
+    async def get_client_token(self,) -> TokenResponse:
         data = await self._post_public(
             "/auth/get-client-token",
-            {"client_id": client_id or self._client_id, "client_secret": client_secret or self._client_secret},
+            {"client_id": self._client_id, "client_secret": self._client_secret},
         )
         self._set_token_from_response(data)
         return TokenResponse.model_validate(data)
@@ -204,7 +206,7 @@ class AClimateClient:
         return TypeAdapter(list[IndicatorFeature]).validate_python(await self.get("/indicator-features/by-indicator-and-country", indicator_id=indicator_id, country_id=country_id, type=type))
 
     # Geoserver and periods
-    async def get_geoserver_point_data(self, latitude: float, longitude: float, **extra: Any) -> dict[str, Any]:
+    async def post_geoserver_point_data(self, latitude: float, longitude: float, **extra: Any) -> dict[str, Any]:
         return await self.post("/geoserver/point-data", {"latitude": latitude, "longitude": longitude, **extra})
 
     async def get_available_periods(self, **params: Any) -> Any:
