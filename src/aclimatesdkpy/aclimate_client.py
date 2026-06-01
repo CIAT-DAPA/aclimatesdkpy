@@ -90,7 +90,7 @@ class AClimateClient:
     async def _fetch_token(self) -> None:
         if not self._client_id or not self._client_secret:
             raise AClimateAuthError("client_id/client_secret are required to fetch a token")
-        await self.get_client_token(self._client_id, self._client_secret)
+        await self.get_client_token()
 
     def _set_token_from_response(self, data: dict[str, Any]) -> None:
         token = data.get("access_token") or data.get("token")
@@ -155,7 +155,7 @@ class AClimateClient:
         return TypeAdapter(list[Location]).validate_python(await self.get("/locations/by-machine-name", machine_name=machine_name))
 
     async def get_locations_by_id(self, id: int) -> list[Location]:
-        return TypeAdapter(list[Location]).validate_python(await self.get("/locations/by-id", id=id))
+        return TypeAdapter(list[Location]).validate_python(ensure_list(await self.get("/locations/by-id", id=id)))
 
     async def get_locations_by_country_ids_with_data(self, country_ids: str | int | Iterable[int], days: int = 0) -> list[LocationWithData]:
         return TypeAdapter(list[LocationWithData]).validate_python(await self.get("/locations/by-country-ids-with-data", country_ids=csv(country_ids), days=days))
@@ -167,8 +167,8 @@ class AClimateClient:
     async def get_historical_daily_by_date_range_all_measures(self, location_ids: str | int | Iterable[int], start_date: str | date | None = None, end_date: str | date | None = None) -> list[ClimateHistoricalDateRecord]:
         return TypeAdapter(list[ClimateHistoricalDateRecord]).validate_python(await self.get("/historical-daily/by-date-range-all-measures", location_ids=csv(location_ids), start_date=date_str(start_date), end_date=date_str(end_date)))
 
-    async def get_historical_monthly_by_date_range_all_measures(self, location_ids: str | int | Iterable[int], start_date: str | date | None = None, end_date: str | date | None = None) -> list[ClimateHistoricalMonthRecord]:
-        return TypeAdapter(list[ClimateHistoricalMonthRecord]).validate_python(await self.get("/historical-monthly/by-date-range-all-measures", location_ids=csv(location_ids), start_date=date_str(start_date), end_date=date_str(end_date)))
+    async def get_historical_monthly_by_date_range_all_measures(self, location_ids: str | int | Iterable[int], start_date: str | date | None = None, end_date: str | date | None = None) -> list[ClimateHistoricalDateRecord]:
+        return TypeAdapter(list[ClimateHistoricalDateRecord]).validate_python(await self.get("/historical-monthly/by-date-range-all-measures", location_ids=csv(location_ids), start_date=date_str(start_date), end_date=date_str(end_date)))
 
     async def get_historical_monthly_minmax_by_location(self, location_id: int) -> list[MinMaxDateRecord]:
         return TypeAdapter(list[MinMaxDateRecord]).validate_python(await self.get("/historical-monthly/minmax-by-location", location_id=location_id))

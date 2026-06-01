@@ -11,10 +11,16 @@ from collections import defaultdict
 from typing import Any, Literal
 
 from aclimatesdkpy.aclimate_models import (
+    ClimateHistoricalDateRecord,
     ClimateHistoricalIndicatorRecord,
+    ClimateHistoricalMonthRecord,
     Country,
     IndicatorFeature,
+    IndicatorWithFeatures,
     Location,
+    LocationWithData,
+    MinMaxDateRecord,
+    MinMaxMonthRecord,
 )
 
 SupportedLanguage = Literal["en", "es"]
@@ -222,16 +228,16 @@ class ContextBuilder:
             lines.extend(parts)
         return "\n".join(lines)
 
-    def current_conditions_summary(self, locations_data: list[dict[str, Any]]) -> str:
+    def current_conditions_summary(self, locations_data: list[LocationWithData]) -> str:
         if not locations_data:
             return self.t("no_current_data")
 
         lines = [self.t("current_conditions", count=len(locations_data))]
         for item in locations_data:
-            name = item.get("name", "?")
-            admin1 = item.get("admin1_name", "")
-            country = item.get("country_name", "")
-            loc_id = item.get("id", "?")
+            name = item.name
+            admin1 = item.admin1_name or ""
+            country = item.country_name or ""
+            loc_id = item.id
             header = f"\n  {name}"
             if admin1:
                 header += f", {admin1}"
@@ -239,32 +245,32 @@ class ContextBuilder:
                 header += f" ({country}) - id={loc_id}"
             lines.append(header)
 
-            latest = item.get("latest_data")
+            latest = item.latest_data
             if not latest:
                 lines.append(f"    {self.t('no_recent_data')}")
                 continue
 
-            d = latest.get("date", self.t("unknown_date"))
+            d = latest.date or self.t("unknown_date")
             lines.append(f"    {self.t('latest_measurement')}: {d}")
 
-            for measure in latest.get("measures", []):
-                value = measure.get("value")
-                unit = measure.get("measure_unit", "")
-                name = measure.get("measure_name", measure.get("measure_short_name", "?"))
+            for measure in latest.measures:
+                value = measure.value
+                unit = measure.measure_unit or ""
+                mname = measure.measure_name or measure.measure_short_name or "?"
                 if value is not None:
-                    lines.append(f"    - {name}: {value:.1f} {unit}")
+                    lines.append(f"    - {mname}: {value:.1f} {unit}")
                 else:
-                    lines.append(f"    - {name}: {self.t('no_data')}")
+                    lines.append(f"    - {mname}: {self.t('no_data')}")
 
         return "\n".join(lines)
 
     # Historical climate
 
-    def daily_climate_summary(self, records: list[ClimateHistoricalDaily]) -> str:
+    def daily_climate_summary(self, records: list[ClimateHistoricalDateRecord]) -> str:
         if not records:
             return self.t("no_daily")
 
-        by_measure: dict[str, list[ClimateHistoricalDaily]] = defaultdict(list)
+        by_measure: dict[str, list[ClimateHistoricalDateRecord]] = defaultdict(list)
         for record in records:
             key = f"{record.measure_name or record.measure_short_name} ({record.measure_unit or ''})"
             by_measure[key].append(record)
@@ -289,11 +295,11 @@ class ContextBuilder:
 
         return "\n".join(lines)
 
-    def monthly_climate_summary(self, records: list[ClimateHistoricalMonthly]) -> str:
+    def monthly_climate_summary(self, records: list[ClimateHistoricalDateRecord]) -> str:
         if not records:
             return self.t("no_monthly")
 
-        by_measure: dict[str, list[ClimateHistoricalMonthly]] = defaultdict(list)
+        by_measure: dict[str, list[ClimateHistoricalDateRecord]] = defaultdict(list)
         for record in records:
             key = f"{record.measure_name or record.measure_short_name} ({record.measure_unit or ''})"
             by_measure[key].append(record)
@@ -307,19 +313,21 @@ class ContextBuilder:
             average = sum(values) / len(values)
             min_record = min(sorted_records, key=lambda x: x.value)
             max_record = max(sorted_records, key=lambda x: x.value)
+            first_month = self.months.get(sorted_records[0].date.month, str(sorted_records[0].date.month))
+            last_month = self.months.get(sorted_records[-1].date.month, str(sorted_records[-1].date.month))
             lines.append(f"\n  {measure.strip()}:")
-            lines.append(f"    {self.t('period')}: {sorted_records[0].date} -> {sorted_records[-1].date}")
+            lines.append(f"    {self.t('period')}: {first_month} -> {last_month}")
             lines.append(f"    {self.t('monthly_average')}: {average:.2f}")
-            lines.append(f"    {self.t('lowest_month')}: {min_record.value:.2f} ({min_record.date})")
-            lines.append(f"    {self.t('highest_month')}: {max_record.value:.2f} ({max_record.date})")
+            lines.append(f"    {self.t('lowest_month')}: {min_record.value:.2f} ({self.months.get(min_record.date.month, str(min_record.date.month))})")
+            lines.append(f"    {self.t('highest_month')}: {max_record.value:.2f} ({self.months.get(max_record.date.month, str(max_record.date.month))})")
 
         return "\n".join(lines)
 
-    def climatology_narrative(self, records: list[ClimateHistoricalClimatology]) -> str:
+    def climatology_narrative(self, records: list[ClimateHistoricalMonthRecord]) -> str:
         if not records:
             return self.t("no_climatology")
 
-        by_measure: dict[str, list[ClimateHistoricalClimatology]] = defaultdict(list)
+        by_measure: dict[str, list[ClimateHistoricalMonthRecord]] = defaultdict(list)
         for record in records:
             key = record.measure_name or record.measure_short_name or self.t("variable")
             by_measure[key].append(record)
@@ -346,26 +354,26 @@ class ContextBuilder:
 
         return "\n".join(lines)
 
-    def minmax_daily_summary(self, records: list[MinMaxDailyRecord]) -> str:
+    def minmax_daily_summary(self, records: list[MinMaxDateRecord]) -> str:
         if not records:
             return self.t("no_extremes")
         location = self._location_name(records[0].location_name, records[0].location_id)
         lines = [self.t("daily_extremes_title", location=location)]
         for record in records:
-            name = record.measure_name or str(record.measure_id)
+            name = record.name or str(record.id)
             lines.append(
                 f"  - {name}: min={record.min_value:.2f} ({record.min_date or '?'})"
                 f" | max={record.max_value:.2f} ({record.max_date or '?'})"
             )
         return "\n".join(lines)
 
-    def minmax_climatology_summary(self, records: list[MinMaxClimatologyRecord]) -> str:
+    def minmax_climatology_summary(self, records: list[MinMaxMonthRecord]) -> str:
         if not records:
             return self.t("no_clim_extremes")
         location = self._location_name(records[0].location_name, records[0].location_id)
         lines = [self.t("clim_extremes_title", location=location)]
         for record in records:
-            name = record.measure_name or str(record.measure_id)
+            name = record.name or str(record.id)
             min_month = self.months.get(record.min_month or 0, str(record.min_month))
             max_month = self.months.get(record.max_month or 0, str(record.max_month))
             lines.append(
@@ -416,13 +424,13 @@ class ContextBuilder:
 
         return "\n".join(lines)
 
-    def indicator_extremes_narrative(self, records: list[MinMaxIndicatorRecord]) -> str:
+    def indicator_extremes_narrative(self, records: list[MinMaxDateRecord]) -> str:
         if not records:
             return self.t("no_indicator_extremes")
         location = self._location_name(records[0].location_name, records[0].location_id)
         lines = [self.t("indicator_extremes_title", location=location)]
         for record in records:
-            name = record.indicator_name or str(record.indicator_id)
+            name = record.name or str(record.id)
             lines.append(
                 f"  - {name}: min={record.min_value:.2f} ({record.min_date or '?'})"
                 f" | max={record.max_value:.2f} ({record.max_date or '?'})"
@@ -453,15 +461,10 @@ class ContextBuilder:
 
         return "\n".join(lines) if lines else self.t("no_extra_info")
 
-    def indicators_catalog_summary(self, indicators: list[dict[str, Any]]) -> str:
+    def indicators_catalog_summary(self, indicators: list[IndicatorWithFeatures]) -> str:
         if not indicators:
             return self.t("no_indicators")
         lines = [self.t("indicators_catalog", count=len(indicators))]
         for indicator in indicators:
-            name = indicator.get("name", "?")
-            short = indicator.get("short_name", "?")
-            unit = indicator.get("unit", "?")
-            temporality = indicator.get("temporality", "?")
-            indicator_type = indicator.get("type", "?")
-            lines.append(f"  - [{short}] {name} - {unit} ({temporality}, {indicator_type})")
+            lines.append(f"  - [{indicator.short_name}] {indicator.name} - {indicator.unit} ({indicator.temporality}, {indicator.type})")
         return "\n".join(lines)
