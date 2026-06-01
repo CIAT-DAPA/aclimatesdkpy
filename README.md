@@ -28,7 +28,7 @@ Before installing the SDK, make sure you have:
 Install `uv` if needed:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+pip install uv
 ```
 
 ---
@@ -45,23 +45,6 @@ Install directly from GitHub with `uv`:
 
 ```bash
 uv pip install git+https://github.com/CIAT-DAPA/aclimatesdkpy.git
-```
-
-
-For local development:
-
-```bash
-git clone https://github.com/CIAT-DAPA/aclimatesdkpy.git
-cd aclimatesdkpy
-uv sync --all-extras --dev
-```
-
-Run commands inside the managed environment:
-
-```bash
-uv run python examples/basic_usage.py
-uv run pytest
-uv run ruff check .
 ```
 
 ## 📦 Uninstall
@@ -251,10 +234,24 @@ aclimatesdkpy/
 
 ## 🧰 Development with uv
 
+For local development:
+
+```bash
+git clone https://github.com/CIAT-DAPA/aclimatesdkpy.git
+cd aclimatesdkpy
+uv venv
+```
+
 Create or update the virtual environment from the lockfile:
 
 ```bash
 uv sync --all-extras --dev
+```
+
+Run commands inside the managed environment:
+
+```bash
+uv run python examples/basic_usage.py
 ```
 
 Run tests:

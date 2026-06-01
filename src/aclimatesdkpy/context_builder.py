@@ -11,16 +11,10 @@ from collections import defaultdict
 from typing import Any, Literal
 
 from aclimatesdkpy.aclimate_models import (
-    ClimateHistoricalClimatology,
-    ClimateHistoricalDaily,
     ClimateHistoricalIndicatorRecord,
-    ClimateHistoricalMonthly,
     Country,
     IndicatorFeature,
     Location,
-    MinMaxClimatologyRecord,
-    MinMaxDailyRecord,
-    MinMaxIndicatorRecord,
 )
 
 SupportedLanguage = Literal["en", "es"]
