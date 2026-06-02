@@ -408,6 +408,7 @@ async def test_close_client_closes_and_resets_singleton(client_module, reset_glo
             {"location_id": 10, "start_date": "2024-01-01", "end_date": "2024-01-31", "period": "daily"},
         ),
         ("get_indicator_minmax_by_location", (10,), "/indicator/minmax-by-location", {"location_id": 10}),
+        ("get_indicators_all_categories", (), "/indicator-mng/all-categories", {}),
         ("get_indicators_by_category_id", (5,), "/indicator-mng/by-category-id", {"category_id": 5}),
         (
             "get_indicators_by_country",
