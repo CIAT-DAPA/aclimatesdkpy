@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -31,6 +31,18 @@ class Admin1(BaseModel):
     country_id: int
     country_name: str
     country_iso2: str
+
+
+class Admin2(BaseModel):
+    id: int
+    name: str
+    ext_id: Optional[str] = None
+    admin1_id: Optional[int] = None
+    admin1_name: Optional[str] = None
+    admin1_ext_id: Optional[str] = None
+    country_id: Optional[int] = None
+    country_name: Optional[str] = None
+    country_iso2: Optional[str] = None
 
 
 # ─── Locations ───────────────────────────────────────────────────────────────
@@ -157,7 +169,7 @@ class IndicatorCategory(BaseModel):
 
 class Indicator(BaseModel):
     """
-    Indicador agro-climático calculado.
+    Indicador agro-climático.
     Ejemplos: consecutive_rainy_days (crd), heat_stress, dry_days, frost_days
     """
     id: int
@@ -198,5 +210,39 @@ class ClimateHistoricalIndicatorRecord(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
 
+
+# ─── Periods ──────────────────────────────────────────────────────────────────
+
+class PeriodResponse(BaseModel):
+    """Periodo disponible en el indicador histórico para una ubicación."""
+    value: str    # "daily" | "monthly" | "annual" | "seasonal" | "decadal" | "other"
+    label: str
+    has_data: bool
+
+
+# ─── Geoserver ────────────────────────────────────────────────────────────────
+
+class PointDataRequest(BaseModel):
+    """Cuerpo del request para /geoserver/point-data."""
+    coordinates: list[list[float]]
+    start_date: date
+    end_date: date
+    workspace: str
+    store: str
+    temporality: Literal["daily", "monthly", "annual"] = "daily"
+
+
+class PointDataResult(BaseModel):
+    """Registro individual devuelto por /geoserver/point-data."""
+    coordinate: list[float]   # [lon, lat]
+    date: str
+    value: float
+
+
+class PointDataResponse(BaseModel):
+    """Respuesta completa de /geoserver/point-data."""
+    request_parameters: PointDataRequest
+    total_results: int
+    data: list[PointDataResult]
 
 
