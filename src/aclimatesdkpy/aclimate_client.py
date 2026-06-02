@@ -15,6 +15,7 @@ from aclimatesdkpy.aclimate_api_error import AClimateAPIError
 from aclimatesdkpy.aclimate_auth_error import AClimateAuthError
 from aclimatesdkpy.aclimate_models import (
     Admin1,
+    Admin2,
     ClimateHistoricalDateRecord,
     ClimateHistoricalIndicatorRecord,
     ClimateHistoricalMonthRecord,
@@ -149,6 +150,15 @@ class AClimateClient:
 
     async def get_admin1_by_country_ids(self, country_ids: str | int | Iterable[int]) -> list[Admin1]:
         return TypeAdapter(list[Admin1]).validate_python(await self.get("/admin1/by-country-ids", country_ids=csv(country_ids)))
+    
+    async def get_admin1_by_name(self, name: str) -> list[Admin1]:
+        return TypeAdapter(list[Admin1]).validate_python(await self.get("/admin1/by-name", name=name))
+    
+    async def get_admin2_by_country_ids(self, country_ids: str | int | Iterable[int]) -> list[Admin2]:
+        return TypeAdapter(list[Admin2]).validate_python(await self.get("/admin2/by-country-ids", country_ids=csv(country_ids)))
+    
+    async def get_admin2_by_name(self, name: str) -> list[Admin2]:
+        return TypeAdapter(list[Admin2]).validate_python(await self.get("/admin2/by-name", name=name))
 
     # Locations
     async def get_locations_by_machine_name(self, machine_name: str) -> list[Location]:

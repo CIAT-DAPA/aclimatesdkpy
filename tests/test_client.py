@@ -371,6 +371,9 @@ async def test_close_client_closes_and_resets_singleton(client_module, reset_glo
         ("get_countries", (), "/countries", {}),
         ("get_countries_by_name", ("Colombia",), "/countries/by-name", {"name": "Colombia"}),
         ("get_admin1_by_country_ids", ([1, 2],), "/admin1/by-country-ids", {"country_ids": "1,2"}),
+        ("get_admin1_by_name", ("Antioquia",), "/admin1/by-name", {"name": "Antioquia"}),
+        ("get_admin2_by_country_ids", ([1, 2],), "/admin2/by-country-ids", {"country_ids": "1,2"}),
+        ("get_admin2_by_name", ("Medellín",), "/admin2/by-name", {"name": "Medellín"}),
         ("get_locations_by_machine_name", ("colombia-cali",), "/locations/by-machine-name", {"machine_name": "colombia-cali"}),
         ("get_locations_by_id", (10,), "/locations/by-id", {"id": 10}),
         (

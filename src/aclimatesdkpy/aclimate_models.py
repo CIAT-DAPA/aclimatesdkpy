@@ -32,6 +32,18 @@ class Admin1(BaseModel):
     country_name: str
     country_iso2: str
 
+class Admin2(BaseModel):
+    id: int
+    name: str
+    ext_id: str
+    country_id: int
+    country_name: str
+    country_iso2: str
+    admin1_ext_id: str
+    admin1_id: int
+    admin1_name: str
+
+
 
 # ─── Locations ───────────────────────────────────────────────────────────────
 
