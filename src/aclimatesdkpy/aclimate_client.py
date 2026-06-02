@@ -28,6 +28,9 @@ from aclimatesdkpy.aclimate_models import (
     LocationWithData,
     MinMaxDateRecord,
     MinMaxMonthRecord,
+    PeriodResponse,
+    PointDataRequest,
+    PointDataResponse,
     TokenResponse,
 )
 from aclimatesdkpy.utils import csv, date_str, ensure_list
@@ -160,9 +163,22 @@ class AClimateClient:
     async def get_admin2_by_name(self, name: str) -> list[Admin2]:
         return TypeAdapter(list[Admin2]).validate_python(await self.get("/admin2/by-name", name=name))
 
+    async def get_admin1_by_name(self, name: str) -> list[Admin1]:
+        return TypeAdapter(list[Admin1]).validate_python(await self.get("/admin1/by-name", name=name))
+
+    # Admin2
+    async def get_admin2_by_country_ids(self, country_ids: str | int | Iterable[int]) -> list[Admin2]:
+        return TypeAdapter(list[Admin2]).validate_python(await self.get("/admin2/by-country-ids", country_ids=csv(country_ids)))
+
+    async def get_admin2_by_name(self, name: str) -> list[Admin2]:
+        return TypeAdapter(list[Admin2]).validate_python(await self.get("/admin2/by-name", name=name))
+
     # Locations
     async def get_locations_by_machine_name(self, machine_name: str) -> list[Location]:
         return TypeAdapter(list[Location]).validate_python(await self.get("/locations/by-machine-name", machine_name=machine_name))
+
+    async def get_locations_by_name(self, name: str) -> list[Location]:
+        return TypeAdapter(list[Location]).validate_python(await self.get("/locations/by-name", name=name))
 
     async def get_locations_by_id(self, id: int) -> list[Location]:
         return TypeAdapter(list[Location]).validate_python(ensure_list(await self.get("/locations/by-id", id=id)))
@@ -215,15 +231,19 @@ class AClimateClient:
     async def get_indicator_categories_by_country(self, country_id: int) -> list[IndicatorCategory]:
         return TypeAdapter(list[IndicatorCategory]).validate_python(await self.get("/indicator-category-mng/by-country", country_id=country_id))
 
+    async def get_all_indicator_categories(self) -> list[IndicatorCategory]:
+        return TypeAdapter(list[IndicatorCategory]).validate_python(await self.get("/indicator-mng/all-categories"))
+
     async def get_indicator_features_by_indicator_and_country(self, indicator_id: int, country_id: int, type: str | None = None) -> list[IndicatorFeature]:
         return TypeAdapter(list[IndicatorFeature]).validate_python(await self.get("/indicator-features/by-indicator-and-country", indicator_id=indicator_id, country_id=country_id, type=type))
 
     # Geoserver and periods
-    async def post_geoserver_point_data(self, latitude: float, longitude: float, **extra: Any) -> dict[str, Any]:
-        return await self.post("/geoserver/point-data", {"latitude": latitude, "longitude": longitude, **extra})
+    async def post_geoserver_point_data(self, request: PointDataRequest) -> PointDataResponse:
+        data = await self.post("/geoserver/point-data", request.model_dump(mode="json"))
+        return PointDataResponse.model_validate(data)
 
-    async def get_available_periods(self, **params: Any) -> Any:
-        return await self.get("/periods/available", **params)
+    async def get_available_periods(self, location_id: int) -> list[PeriodResponse]:
+        return TypeAdapter(list[PeriodResponse]).validate_python(await self.get("/periods/available", location_id=location_id))
 
 
 _client: AClimateClient | None = None

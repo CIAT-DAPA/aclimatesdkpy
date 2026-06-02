@@ -280,32 +280,68 @@ async def test_post_raises_api_error_for_failed_response(client_module):
 @pytest.mark.asyncio
 async def test_post_geoserver_point_data_delegates_to_authenticated_post(client_module):
     """Validates the geoserver point-data convenience method."""
+    raw_response = {
+        "request_parameters": {
+            "coordinates": [[-74.08, 4.65]],
+            "start_date": "2024-01-01",
+            "end_date": "2024-01-31",
+            "workspace": "aclimate",
+            "store": "precipitation",
+            "temporality": "daily",
+        },
+        "total_results": 1,
+        "data": [{"coordinate": [-74.08, 4.65], "date": "2024-01-01", "value": 12.5}],
+    }
     client = client_module.AClimateClient()
-    client.post = AsyncMock(return_value={"value": 42})
+    client.post = AsyncMock(return_value=raw_response)
 
-    result = await client.post_geoserver_point_data(
-        latitude=4.65,
-        longitude=-74.08,
-        variable="rainfall",
+    request = client_module.PointDataRequest(
+        coordinates=[[-74.08, 4.65]],
+        start_date="2024-01-01",
+        end_date="2024-01-31",
+        workspace="aclimate",
+        store="precipitation",
+        temporality="daily",
     )
+    result = await client.post_geoserver_point_data(request)
 
-    assert result == {"value": 42}
+    assert isinstance(result, client_module.PointDataResponse)
+    assert result.total_results == 1
+    assert len(result.data) == 1
+    assert result.data[0].value == 12.5
     client.post.assert_awaited_once_with(
         "/geoserver/point-data",
-        {"latitude": 4.65, "longitude": -74.08, "variable": "rainfall"},
+        {
+            "coordinates": [[-74.08, 4.65]],
+            "start_date": "2024-01-01",
+            "end_date": "2024-01-31",
+            "workspace": "aclimate",
+            "store": "precipitation",
+            "temporality": "daily",
+        },
     )
 
 
 @pytest.mark.asyncio
-async def test_get_available_periods_delegates_to_authenticated_get(client_module):
+async def test_get_available_periods_delegates_to_authenticated_get(monkeypatch, client_module):
     """Validates the available-periods convenience method."""
+
+    class FakeTypeAdapter:
+        def __init__(self, annotation):
+            self.annotation = annotation
+
+        def validate_python(self, value):
+            return value
+
+    monkeypatch.setattr(client_module, "TypeAdapter", FakeTypeAdapter)
+
     client = client_module.AClimateClient()
-    client.get = AsyncMock(return_value=["2024-01", "2024-02"])
+    client.get = AsyncMock(return_value=[{"value": "monthly", "label": "Monthly", "has_data": True}])
 
-    result = await client.get_available_periods(country_id=1, temporality=None)
+    result = await client.get_available_periods(location_id=10)
 
-    assert result == ["2024-01", "2024-02"]
-    client.get.assert_awaited_once_with("/periods/available", country_id=1, temporality=None)
+    assert result == [{"value": "monthly", "label": "Monthly", "has_data": True}]
+    client.get.assert_awaited_once_with("/periods/available", location_id=10)
 
 
 @pytest.mark.asyncio
@@ -371,10 +407,11 @@ async def test_close_client_closes_and_resets_singleton(client_module, reset_glo
         ("get_countries", (), "/countries", {}),
         ("get_countries_by_name", ("Colombia",), "/countries/by-name", {"name": "Colombia"}),
         ("get_admin1_by_country_ids", ([1, 2],), "/admin1/by-country-ids", {"country_ids": "1,2"}),
-        ("get_admin1_by_name", ("Antioquia",), "/admin1/by-name", {"name": "Antioquia"}),
+        ("get_admin1_by_name", ("Putumayo",), "/admin1/by-name", {"name": "Putumayo"}),
         ("get_admin2_by_country_ids", ([1, 2],), "/admin2/by-country-ids", {"country_ids": "1,2"}),
-        ("get_admin2_by_name", ("Medellín",), "/admin2/by-name", {"name": "Medellín"}),
+        ("get_admin2_by_name", ("Mocoa",), "/admin2/by-name", {"name": "Mocoa"}),
         ("get_locations_by_machine_name", ("colombia-cali",), "/locations/by-machine-name", {"machine_name": "colombia-cali"}),
+        ("get_locations_by_name", ("Campucana",), "/locations/by-name", {"name": "Campucana"}),
         ("get_locations_by_id", (10,), "/locations/by-id", {"id": 10}),
         (
             "get_locations_by_country_ids_with_data",
@@ -431,12 +468,14 @@ async def test_close_client_closes_and_resets_singleton(client_module, reset_glo
             "/indicator-category-mng/by-country",
             {"country_id": 1},
         ),
+        ("get_all_indicator_categories", (), "/indicator-mng/all-categories", {}),
         (
             "get_indicator_features_by_indicator_and_country",
             (7, 1),
             "/indicator-features/by-indicator-and-country",
             {"indicator_id": 7, "country_id": 1, "type": None},
         ),
+        ("get_available_periods", (10,), "/periods/available", {"location_id": 10}),
     ],
 )
 async def test_endpoint_wrapper_methods_delegate_to_get_with_expected_parameters(
