@@ -190,6 +190,9 @@ class AClimateClient:
     async def get_indicator_minmax_by_location(self, location_id: int) -> list[MinMaxDateRecord]:
         return TypeAdapter(list[MinMaxDateRecord]).validate_python(await self.get("/indicator/minmax-by-location", location_id=location_id))
 
+    async def get_indicators_all_categories(self) -> list[IndicatorCategory]:
+        return TypeAdapter(list[IndicatorCategory]).validate_python(ensure_list(await self.get("/indicator-mng/all-categories")))
+
     async def get_indicators_by_category_id(self, category_id: int) -> list[Indicator]:
         return TypeAdapter(list[Indicator]).validate_python(await self.get("/indicator-mng/by-category-id", category_id=category_id))
 
