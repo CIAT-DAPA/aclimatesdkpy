@@ -170,6 +170,21 @@ class MinMaxMonthRecord(BaseModel):
     max_month: Optional[int] = None
 
 
+# ─── Climate Measures ─────────────────────────────────────────────────────────
+
+class ClimateMeasure(BaseModel):
+    """
+    Variable climática.
+    Ejemplos: precipitation (prec), temperature (tmax, tmin), solar_radiation (srad)
+    """
+    id: int
+    name: str
+    short_name: str
+    unit: str
+    description: Optional[str] = None
+    enable: bool
+
+
 # ─── Indicators ──────────────────────────────────────────────────────────────
 
 class IndicatorCategory(BaseModel):
