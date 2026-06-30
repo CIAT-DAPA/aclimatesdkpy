@@ -475,6 +475,7 @@ async def test_close_client_closes_and_resets_singleton(client_module, reset_glo
             "/indicator-features/by-indicator-and-country",
             {"indicator_id": 7, "country_id": 1, "type": None},
         ),
+        ("get_climate_measures_by_country", (1,), "/countries/1/climate-measures", {}),
         ("get_available_periods", (10,), "/periods/available", {"location_id": 10}),
     ],
 )
