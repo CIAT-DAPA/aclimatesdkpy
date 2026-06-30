@@ -19,6 +19,7 @@ from aclimatesdkpy.aclimate_models import (
     ClimateHistoricalDateRecord,
     ClimateHistoricalIndicatorRecord,
     ClimateHistoricalMonthRecord,
+    ClimateMeasure,
     Country,
     Indicator,
     IndicatorCategory,
@@ -185,6 +186,12 @@ class AClimateClient:
 
     async def get_locations_by_country_ids_with_data(self, country_ids: str | int | Iterable[int], days: int = 0) -> list[LocationWithData]:
         return TypeAdapter(list[LocationWithData]).validate_python(await self.get("/locations/by-country-ids-with-data", country_ids=csv(country_ids), days=days))
+
+    # Climate Measures
+    async def get_climate_measures_by_country(self, country_id: int) -> list[ClimateMeasure]:
+        return TypeAdapter(list[ClimateMeasure]).validate_python(
+            await self.get(f"/countries/{country_id}/climate-measures")
+        )
 
     # Historical daily/monthly
     async def get_historical_daily_minmax_by_location(self, location_id: int) -> list[MinMaxDateRecord]:
