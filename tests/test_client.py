@@ -24,10 +24,11 @@ def client_module():
 class FakeResponse:
     """Minimal async HTTP response double."""
 
-    def __init__(self, status_code: int, payload: dict[str, Any] | None = None, text: str = "") -> None:
+    def __init__(self, status_code: int, payload: dict[str, Any] | None = None, text: str = "", content: bytes = b"") -> None:
         self.status_code = status_code
         self._payload = payload or {}
         self.text = text or str(self._payload)
+        self.content = content or str(self.text).encode()
 
     def json(self) -> dict[str, Any]:
         """Returns the configured JSON payload."""
@@ -281,14 +282,6 @@ async def test_post_raises_api_error_for_failed_response(client_module):
 async def test_post_geoserver_point_data_delegates_to_authenticated_post(client_module):
     """Validates the geoserver point-data convenience method."""
     raw_response = {
-        "request_parameters": {
-            "coordinates": [[-74.08, 4.65]],
-            "start_date": "2024-01-01",
-            "end_date": "2024-01-31",
-            "workspace": "aclimate",
-            "store": "precipitation",
-            "temporality": "daily",
-        },
         "total_results": 1,
         "data": [{"coordinate": [-74.08, 4.65], "date": "2024-01-01", "value": 12.5}],
     }
@@ -572,3 +565,91 @@ async def test_get_indicators_by_country_forwards_optional_filters(monkeypatch, 
         category_id=3,
         type="AGROCLIMATIC",
     )
+
+
+@pytest.mark.asyncio
+async def test_post_geoserver_raster_export_sends_request_and_returns_bytes(client_module):
+    """Validates the geoserver raster-export convenience method."""
+    fake_http = FakeAsyncHTTPClient(
+        post_responses=[FakeResponse(200, content=b"fake-tiff-binary-content")]
+    )
+    client = client_module.AClimateClient(base_url="https://example.test", access_token="test-token")
+    client._http = fake_http
+
+    request = client_module.RasterExportRequest(
+        workspace="aclimate",
+        store="precipitation",
+        start_date="2024-01-01",
+        end_date="2024-01-03",
+        temporality="daily",
+        output_format="zip",
+    )
+
+    result = await client.post_geoserver_raster_export(request)
+
+    assert isinstance(result, bytes)
+    assert len(fake_http.post_calls) == 1
+    assert fake_http.post_calls[0]["url"] == "https://example.test/geoserver/raster-export"
+    assert fake_http.post_calls[0]["headers"] == {"Authorization": "Bearer test-token"}
+    assert fake_http.post_calls[0]["json"] == {
+        "workspace": "aclimate",
+        "store": "precipitation",
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-03",
+        "temporality": "daily",
+        "clip": {"enabled": False, "geoserver": None},
+        "output_format": "zip",
+    }
+
+
+@pytest.mark.asyncio
+async def test_post_geoserver_raster_export_refreshes_token_on_401(client_module):
+    """Validates token refresh and retry after a 401 on raster-export."""
+    fake_http = FakeAsyncHTTPClient(
+        post_responses=[
+            FakeResponse(401, text="Unauthorized"),
+            FakeResponse(200, content=b"refreshed-content"),
+        ]
+    )
+    client = client_module.AClimateClient(base_url="https://example.test", access_token="expired-token")
+    client._http = fake_http
+
+    async def fake_fetch_token() -> None:
+        client._token = "refreshed-token"
+        client._token_expires_at = time.monotonic() + 300
+
+    client._fetch_token = AsyncMock(side_effect=fake_fetch_token)
+
+    request = client_module.RasterExportRequest(
+        workspace="aclimate",
+        store="precipitation",
+        start_date="2024-01-01",
+        end_date="2024-01-01",
+    )
+
+    result = await client.post_geoserver_raster_export(request)
+
+    assert isinstance(result, bytes)
+    assert len(fake_http.post_calls) == 2
+    assert fake_http.post_calls[0]["headers"] == {"Authorization": "Bearer expired-token"}
+    assert fake_http.post_calls[1]["headers"] == {"Authorization": "Bearer refreshed-token"}
+
+
+@pytest.mark.asyncio
+async def test_post_geoserver_raster_export_raises_api_error_on_failure(client_module):
+    """Validates API error handling for failed raster-export requests."""
+    fake_http = FakeAsyncHTTPClient(
+        post_responses=[FakeResponse(500, text="Internal server error")]
+    )
+    client = client_module.AClimateClient(base_url="https://example.test", access_token="token")
+    client._http = fake_http
+
+    request = client_module.RasterExportRequest(
+        workspace="aclimate",
+        store="precipitation",
+        start_date="2024-01-01",
+        end_date="2024-01-01",
+    )
+
+    with pytest.raises(client_module.AClimateAPIError):
+        await client.post_geoserver_raster_export(request)
