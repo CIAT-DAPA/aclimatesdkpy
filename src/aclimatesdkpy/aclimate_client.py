@@ -32,6 +32,7 @@ from aclimatesdkpy.aclimate_models import (
     PeriodResponse,
     PointDataRequest,
     PointDataResponse,
+    RasterExportRequest,
     TokenResponse,
 )
 from aclimatesdkpy.utils import csv, date_str, ensure_list
@@ -248,6 +249,32 @@ class AClimateClient:
     async def post_geoserver_point_data(self, request: PointDataRequest) -> PointDataResponse:
         data = await self.post("/geoserver/point-data", request.model_dump(mode="json"))
         return PointDataResponse.model_validate(data)
+
+    async def post_geoserver_raster_export(self, request: RasterExportRequest) -> bytes:
+        """Export rasters from GeoServer.
+
+        Makes a POST to /geoserver/raster-export and returns the raw binary
+        content (GeoTIFF or ZIP bytes).
+        """
+        assert self._http, "Client not initialized; use 'async with AClimateClient(...)'"
+        token = await self._ensure_token()
+        json_body = request.model_dump(mode="json")
+        response = await self._http.post(
+            f"{self.base_url}/geoserver/raster-export",
+            json=json_body,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        if response.status_code == 401:
+            self._token = None
+            token = await self._ensure_token()
+            response = await self._http.post(
+                f"{self.base_url}/geoserver/raster-export",
+                json=json_body,
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        if response.status_code >= 400:
+            raise AClimateAPIError(response.status_code, response.text[:500])
+        return response.content
 
     async def get_available_periods(self, location_id: int) -> list[PeriodResponse]:
         return TypeAdapter(list[PeriodResponse]).validate_python(await self.get("/periods/available", location_id=location_id))

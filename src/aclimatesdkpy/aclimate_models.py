@@ -268,8 +268,31 @@ class PointDataResult(BaseModel):
 
 class PointDataResponse(BaseModel):
     """Respuesta completa de /geoserver/point-data."""
-    request_parameters: PointDataRequest
     total_results: int
     data: list[PointDataResult]
+
+
+class ClipGeoserverSource(BaseModel):
+    """Fuente vectorial GeoServer para recorte (clip) de rasters."""
+    workspace: str
+    layer: str
+    cql_filter: Optional[str] = None
+
+
+class ClipConfig(BaseModel):
+    """Configuración de recorte (clip) de rasters contra un layer de GeoServer."""
+    enabled: bool = False
+    geoserver: Optional[ClipGeoserverSource] = None
+
+
+class RasterExportRequest(BaseModel):
+    """Cuerpo del request para /geoserver/raster-export."""
+    workspace: str
+    store: str
+    start_date: date
+    end_date: date
+    temporality: Literal["daily", "monthly", "annual"] = "daily"
+    clip: ClipConfig = ClipConfig()
+    output_format: Literal["single_tiff", "zip"] = "zip"
 
 
