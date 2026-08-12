@@ -405,6 +405,7 @@ async def test_close_client_closes_and_resets_singleton(client_module, reset_glo
         ("get_admin2_by_name", ("Mocoa",), "/admin2/by-name", {"name": "Mocoa"}),
         ("get_locations_by_machine_name", ("colombia-cali",), "/locations/by-machine-name", {"machine_name": "colombia-cali"}),
         ("get_locations_by_name", ("Campucana",), "/locations/by-name", {"name": "Campucana"}),
+        ("get_locations_by_search", ("putumayo",), "/locations/search", {"q": "putumayo"}),
         ("get_locations_by_id", (10,), "/locations/by-id", {"id": 10}),
         (
             "get_locations_by_country_ids_with_data",
