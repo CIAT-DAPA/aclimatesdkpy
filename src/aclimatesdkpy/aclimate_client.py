@@ -182,6 +182,9 @@ class AClimateClient:
     async def get_locations_by_name(self, name: str) -> list[Location]:
         return TypeAdapter(list[Location]).validate_python(await self.get("/locations/by-name", name=name))
 
+    async def get_locations_by_search(self, q: str) -> list[Location]:
+        return TypeAdapter(list[Location]).validate_python(await self.get("/locations/search", q=q))
+
     async def get_locations_by_id(self, id: int) -> list[Location]:
         return TypeAdapter(list[Location]).validate_python(ensure_list(await self.get("/locations/by-id", id=id)))
 
