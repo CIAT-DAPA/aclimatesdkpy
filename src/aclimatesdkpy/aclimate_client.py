@@ -21,6 +21,7 @@ from aclimatesdkpy.aclimate_models import (
     ClimateHistoricalMonthRecord,
     ClimateMeasure,
     Country,
+    CountryClimateMeasure,
     Indicator,
     IndicatorCategory,
     IndicatorFeature,
@@ -195,6 +196,11 @@ class AClimateClient:
     async def get_climate_measures_by_country(self, country_id: int) -> list[ClimateMeasure]:
         return TypeAdapter(list[ClimateMeasure]).validate_python(
             await self.get(f"/countries/{country_id}/climate-measures")
+        )
+
+    async def get_climate_measures_configuration_by_country(self, country_id: int) -> list[CountryClimateMeasure]:
+        return TypeAdapter(list[CountryClimateMeasure]).validate_python(
+            await self.get(f"/countries/{country_id}/climate-measures/configuration")
         )
 
     # Historical daily/monthly

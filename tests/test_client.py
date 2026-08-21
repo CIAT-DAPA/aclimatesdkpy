@@ -470,6 +470,12 @@ async def test_close_client_closes_and_resets_singleton(client_module, reset_glo
             {"indicator_id": 7, "country_id": 1, "type": None},
         ),
         ("get_climate_measures_by_country", (1,), "/countries/1/climate-measures", {}),
+        (
+            "get_climate_measures_configuration_by_country",
+            (1,),
+            "/countries/1/climate-measures/configuration",
+            {},
+        ),
         ("get_available_periods", (10,), "/periods/available", {"location_id": 10}),
     ],
 )
@@ -507,6 +513,55 @@ async def test_endpoint_wrapper_methods_delegate_to_get_with_expected_parameters
 
     assert result == []
     client.get.assert_awaited_once_with(expected_path, **expected_params)
+
+
+@pytest.mark.asyncio
+async def test_get_climate_measures_configuration_by_country_parses_temporality_as_list(monkeypatch, client_module):
+    """Validates the climate-measures configuration method parses temporality as List[str]."""
+
+    raw_response = [
+        {
+            "id": 11,
+            "country_id": 1,
+            "measure_id": 1,
+            "spatial_forecast": True,
+            "spatial_climate": True,
+            "location_forecast": False,
+            "location_climate": True,
+            "temporality": ["daily", "climatology"],
+            "description": "Config Precipitación",
+            "store": "precipitation_data",
+            "workspace": "default_workspace",
+        },
+        {
+            "id": 12,
+            "country_id": 1,
+            "measure_id": 2,
+            "spatial_forecast": False,
+            "spatial_climate": True,
+            "location_forecast": False,
+            "location_climate": False,
+            "temporality": [],
+            "description": None,
+            "store": None,
+            "workspace": None,
+        },
+    ]
+
+    client = client_module.AClimateClient()
+    client.get = AsyncMock(return_value=raw_response)
+
+    result = await client.get_climate_measures_configuration_by_country(country_id=1)
+
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert isinstance(result[0], client_module.CountryClimateMeasure)
+    assert result[0].temporality == ["daily", "climatology"]
+    assert result[0].store == "precipitation_data"
+    assert result[0].workspace == "default_workspace"
+    assert result[1].temporality == []
+    assert result[1].description is None
+    client.get.assert_awaited_once_with("/countries/1/climate-measures/configuration")
 
 
 @pytest.mark.asyncio
