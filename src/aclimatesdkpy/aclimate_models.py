@@ -185,6 +185,21 @@ class ClimateMeasure(BaseModel):
     enable: bool
 
 
+class CountryClimateMeasure(BaseModel):
+    """Configuración de una variable climática por país."""
+    id: int
+    country_id: int
+    measure_id: int
+    spatial_forecast: bool
+    spatial_climate: bool
+    location_forecast: bool
+    location_climate: bool
+    temporality: list[str] = Field(default_factory=list)
+    description: Optional[str] = None
+    store: Optional[str] = None
+    workspace: Optional[str] = None
+
+
 # ─── Indicators ──────────────────────────────────────────────────────────────
 
 class IndicatorCategory(BaseModel):
@@ -242,7 +257,7 @@ class ClimateHistoricalIndicatorRecord(BaseModel):
 
 class PeriodResponse(BaseModel):
     """Periodo disponible en el indicador histórico para una ubicación."""
-    value: str    # "daily" | "monthly" | "annual" | "seasonal" | "decadal" | "other"
+    value: str    # "daily" | "monthly" | "climatology" | "annual" | "multiyear_monthly" | "seasonal" | "decadal" | "other"
     label: str
     has_data: bool
 
@@ -294,5 +309,3 @@ class RasterExportRequest(BaseModel):
     temporality: Literal["daily", "monthly", "annual"] = "daily"
     clip: ClipConfig = ClipConfig()
     output_format: Literal["single_tiff", "zip"] = "zip"
-
-
