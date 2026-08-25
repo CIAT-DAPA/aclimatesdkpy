@@ -516,8 +516,8 @@ async def test_endpoint_wrapper_methods_delegate_to_get_with_expected_parameters
 
 
 @pytest.mark.asyncio
-async def test_get_climate_measures_configuration_by_country_parses_temporality_as_list(monkeypatch, client_module):
-    """Validates the climate-measures configuration method parses temporality as List[str]."""
+async def test_get_climate_measures_configuration_by_country_parses_new_conf_fields(monkeypatch, client_module):
+    """Validates the climate-measures configuration method parses spatial_climate_conf and location_climate_conf."""
 
     raw_response = [
         {
@@ -528,10 +528,20 @@ async def test_get_climate_measures_configuration_by_country_parses_temporality_
             "spatial_climate": True,
             "location_forecast": False,
             "location_climate": True,
-            "temporality": ["daily", "climatology"],
+            "spatial_climate_conf": [
+                {
+                    "temporality": "daily",
+                    "store": "climate_historical_daily_ni_prec",
+                    "workspace": "climate_historical_daily",
+                },
+                {
+                    "temporality": "monthly",
+                    "store": "climate_historical_monthly_ni_prec",
+                    "workspace": "climate_historical_monthly",
+                },
+            ],
+            "location_climate_conf": ["daily", "monthly", "climatology"],
             "description": "Config Precipitación",
-            "store": "precipitation_data",
-            "workspace": "default_workspace",
         },
         {
             "id": 12,
@@ -541,10 +551,15 @@ async def test_get_climate_measures_configuration_by_country_parses_temporality_
             "spatial_climate": True,
             "location_forecast": False,
             "location_climate": False,
-            "temporality": [],
+            "spatial_climate_conf": [
+                {
+                    "temporality": "climatology",
+                    "store": "climate_historical_climatology_ni_prec",
+                    "workspace": "climate_historical_climatology",
+                },
+            ],
+            "location_climate_conf": None,
             "description": None,
-            "store": None,
-            "workspace": None,
         },
     ]
 
@@ -556,11 +571,31 @@ async def test_get_climate_measures_configuration_by_country_parses_temporality_
     assert isinstance(result, list)
     assert len(result) == 2
     assert isinstance(result[0], client_module.CountryClimateMeasure)
-    assert result[0].temporality == ["daily", "climatology"]
-    assert result[0].store == "precipitation_data"
-    assert result[0].workspace == "default_workspace"
-    assert result[1].temporality == []
+
+    # New nested config for spatial climate
+    assert result[0].spatial_climate_conf is not None
+    assert len(result[0].spatial_climate_conf) == 2
+    daily_conf = result[0].spatial_climate_conf[0]
+    assert daily_conf.temporality == "daily"
+    assert daily_conf.store == "climate_historical_daily_ni_prec"
+    assert daily_conf.workspace == "climate_historical_daily"
+    assert result[0].spatial_climate_conf[1].temporality == "monthly"
+
+    # New list of periods for location climate
+    assert result[0].location_climate_conf == ["daily", "monthly", "climatology"]
+    assert result[0].description == "Config Precipitación"
+
+    # Old fields were removed from the response/model
+    assert not hasattr(result[0], "temporality")
+    assert not hasattr(result[0], "store")
+    assert not hasattr(result[0], "workspace")
+
+    # Config is null when the corresponding flag is off
+    assert result[1].spatial_climate_conf is not None
+    assert result[1].spatial_climate_conf[0].temporality == "climatology"
+    assert result[1].location_climate_conf is None
     assert result[1].description is None
+
     client.get.assert_awaited_once_with("/countries/1/climate-measures/configuration")
 
 
