@@ -185,6 +185,13 @@ class ClimateMeasure(BaseModel):
     enable: bool
 
 
+class SpatialClimateConf(BaseModel):
+    """Configuración de clima espacial por temporalidad (store/workspace)."""
+    temporality: str
+    store: Optional[str] = None
+    workspace: Optional[str] = None
+
+
 class CountryClimateMeasure(BaseModel):
     """Configuración de una variable climática por país."""
     id: int
@@ -194,10 +201,9 @@ class CountryClimateMeasure(BaseModel):
     spatial_climate: bool
     location_forecast: bool
     location_climate: bool
-    temporality: list[str] = Field(default_factory=list)
+    spatial_climate_conf: Optional[list[SpatialClimateConf]] = None
+    location_climate_conf: Optional[list[str]] = None
     description: Optional[str] = None
-    store: Optional[str] = None
-    workspace: Optional[str] = None
 
 
 # ─── Indicators ──────────────────────────────────────────────────────────────
