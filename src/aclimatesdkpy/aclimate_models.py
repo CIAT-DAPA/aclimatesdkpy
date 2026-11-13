@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -16,10 +16,65 @@ class TokenResponse(BaseModel):
 
 # ─── Admin Levels ─────────────────────────────────────────────────────────────
 
+class CountryClimateConf(BaseModel):
+    """Climate measure configured for a country.
+
+    Flat object returned inside ``Country.conf_climate``. It merges the country
+    configuration with the measure catalog data and does not expose IDs.
+    """
+    # Measure catalog data
+    name: str
+    short_name: str
+    unit: str
+    description: Optional[str] = None
+    # Country specific configuration
+    country_description: Optional[str] = None
+    spatial_forecast: bool
+    spatial_climate: bool
+    location_forecast: bool
+    location_climate: bool
+    spatial_climate_conf: Optional[list[SpatialClimateConf]] = None
+    location_climate_conf: Optional[list[str]] = None
+
+
+class CountryIndicatorConf(BaseModel):
+    """Indicator configured for a country.
+
+    Flat object returned inside ``Country.conf_indicator``. It merges the country
+    configuration with the indicator and its category data and does not expose IDs.
+    """
+    # Indicator catalog data
+    type: str            # "climate" | "agroclimatic" | "hydrological" | "scenario"
+    name: str
+    short_name: str
+    unit: str
+    temporality: str     # "daily" | "monthly" | "annual" | ...
+    description: Optional[str] = None
+    # Indicator category data
+    category_name: Optional[str] = None
+    category_description: Optional[str] = None
+    # Country specific configuration
+    country_description: Optional[str] = None
+    spatial_forecast: bool
+    spatial_climate: bool
+    location_forecast: bool
+    location_climate: bool
+    criteria: Optional[dict[str, Any]] = None
+    store: Optional[str] = None
+    workspace: Optional[str] = None
+
+
 class Country(BaseModel):
+    """Country with the climate measures and indicators configured for it.
+
+    ``conf_climate`` and ``conf_indicator`` are filled by ``/countries`` and
+    default to empty lists for endpoints that do not return them.
+    """
     id: int
     name: str
     iso2: str
+    conf_climate: list[CountryClimateConf] = Field(default_factory=list)
+    conf_indicator: list[CountryIndicatorConf] = Field(default_factory=list)
 
     model_config = {"json_schema_extra": {"example": {"id": 1, "name": "Colombia", "iso2": "CO"}}}
 
@@ -32,20 +87,13 @@ class Admin1(BaseModel):
     country_name: str
     country_iso2: str
 
-class Admin2(BaseModel):
-    id: int
-    name: str
-    ext_id: str
-    country_id: int
-    country_name: str
-    country_iso2: str
-    admin1_ext_id: str
-    admin1_id: int
-    admin1_name: str
-
-
 
 class Admin2(BaseModel):
+    """Second administrative level (e.g. municipality).
+
+    Parent fields (admin1 and country) are optional because the API returns
+    null when the hierarchy is not registered for the record.
+    """
     id: int
     name: str
     ext_id: Optional[str] = None
