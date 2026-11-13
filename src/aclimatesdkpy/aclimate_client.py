@@ -158,22 +158,37 @@ class AClimateClient:
         return TypeAdapter(list[Admin1]).validate_python(await self.get("/admin1/by-country-ids", country_ids=csv(country_ids)))
     
     async def get_admin1_by_name(self, name: str) -> list[Admin1]:
+        """Return the first-level administrative units matching a name.
+
+        Args:
+            name: Full or partial admin1 name to search for.
+
+        Returns:
+            List of matching ``Admin1`` records.
+        """
         return TypeAdapter(list[Admin1]).validate_python(await self.get("/admin1/by-name", name=name))
-    
+
     async def get_admin2_by_country_ids(self, country_ids: str | int | Iterable[int]) -> list[Admin2]:
+        """Return the second-level administrative units of one or more countries.
+
+        Args:
+            country_ids: A single country ID, an iterable of IDs, or an
+                already comma-separated string (e.g. ``"1,2"``).
+
+        Returns:
+            List of ``Admin2`` records belonging to the given countries.
+        """
         return TypeAdapter(list[Admin2]).validate_python(await self.get("/admin2/by-country-ids", country_ids=csv(country_ids)))
-    
-    async def get_admin2_by_name(self, name: str) -> list[Admin2]:
-        return TypeAdapter(list[Admin2]).validate_python(await self.get("/admin2/by-name", name=name))
-
-    async def get_admin1_by_name(self, name: str) -> list[Admin1]:
-        return TypeAdapter(list[Admin1]).validate_python(await self.get("/admin1/by-name", name=name))
-
-    # Admin2
-    async def get_admin2_by_country_ids(self, country_ids: str | int | Iterable[int]) -> list[Admin2]:
-        return TypeAdapter(list[Admin2]).validate_python(await self.get("/admin2/by-country-ids", country_ids=csv(country_ids)))
 
     async def get_admin2_by_name(self, name: str) -> list[Admin2]:
+        """Return the second-level administrative units matching a name.
+
+        Args:
+            name: Full or partial admin2 name to search for.
+
+        Returns:
+            List of matching ``Admin2`` records.
+        """
         return TypeAdapter(list[Admin2]).validate_python(await self.get("/admin2/by-name", name=name))
 
     # Locations

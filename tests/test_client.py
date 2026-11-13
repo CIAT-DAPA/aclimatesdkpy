@@ -744,3 +744,95 @@ async def test_post_geoserver_raster_export_raises_api_error_on_failure(client_m
 
     with pytest.raises(client_module.AClimateAPIError):
         await client.post_geoserver_raster_export(request)
+
+
+@pytest.mark.asyncio
+async def test_get_countries_returns_climate_and_indicator_configuration(client_module):
+    """Validates that get_countries parses conf_climate and conf_indicator of each country."""
+    raw_response = [
+        {
+            "id": 4,
+            "name": "NICARAGUA",
+            "iso2": "NI",
+            "conf_climate": [
+                {
+                    "name": "Precipitation",
+                    "short_name": "prec",
+                    "unit": "mm",
+                    "description": "Total precipitation",
+                    "country_description": None,
+                    "spatial_forecast": False,
+                    "spatial_climate": True,
+                    "location_forecast": False,
+                    "location_climate": True,
+                    "spatial_climate_conf": [
+                        {
+                            "temporality": "daily",
+                            "store": "climate_historical_daily_ni_prec",
+                            "workspace": "climate_historical_daily",
+                        },
+                    ],
+                    "location_climate_conf": ["daily", "monthly", "climatology"],
+                },
+            ],
+            "conf_indicator": [
+                {
+                    "type": "climate",
+                    "name": "Cold days",
+                    "short_name": "TX10p",
+                    "unit": "% days/year",
+                    "temporality": "annual",
+                    "description": "Days below percentile 10",
+                    "category_name": "Extreme temperatures",
+                    "category_description": "Temperature extremes",
+                    "country_description": None,
+                    "spatial_forecast": False,
+                    "spatial_climate": True,
+                    "location_forecast": False,
+                    "location_climate": True,
+                    "criteria": {"admin_level": 2},
+                    "store": "climate_index_annual_ni_tx10p",
+                    "workspace": "climate_index",
+                },
+            ],
+        },
+        # Country returned without configuration keys (e.g. older API versions)
+        {"id": 1, "name": "COLOMBIA", "iso2": "CO"},
+    ]
+
+    client = client_module.AClimateClient()
+    client.get = AsyncMock(return_value=raw_response)
+
+    result = await client.get_countries()
+
+    client.get.assert_awaited_once_with("/countries")
+    assert len(result) == 2
+
+    # Country with configuration: nested lists are parsed into typed models
+    nicaragua = result[0]
+    assert nicaragua.id == 4
+    assert len(nicaragua.conf_climate) == 1
+    climate_conf = nicaragua.conf_climate[0]
+    assert climate_conf.short_name == "prec"
+    assert climate_conf.spatial_climate is True
+    assert climate_conf.spatial_climate_conf is not None
+    assert climate_conf.spatial_climate_conf[0].store == "climate_historical_daily_ni_prec"
+    assert climate_conf.location_climate_conf == ["daily", "monthly", "climatology"]
+
+    assert len(nicaragua.conf_indicator) == 1
+    indicator_conf = nicaragua.conf_indicator[0]
+    assert indicator_conf.short_name == "TX10p"
+    assert indicator_conf.type == "climate"
+    assert indicator_conf.temporality == "annual"
+    assert indicator_conf.category_name == "Extreme temperatures"
+    assert indicator_conf.criteria == {"admin_level": 2}
+    assert indicator_conf.workspace == "climate_index"
+
+    # No IDs are exposed inside the configuration items
+    assert "id" not in climate_conf.model_dump()
+    assert "id" not in indicator_conf.model_dump()
+
+    # Country without configuration keys defaults to empty lists
+    colombia = result[1]
+    assert colombia.conf_climate == []
+    assert colombia.conf_indicator == []
