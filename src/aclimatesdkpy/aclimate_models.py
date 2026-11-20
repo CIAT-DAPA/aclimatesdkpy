@@ -341,6 +341,33 @@ class PointDataResponse(BaseModel):
     data: list[PointDataResult]
 
 
+class PolygonDataRequest(BaseModel):
+    """Request body for /geoserver/polygon-data.
+
+    ``polygon`` is a GeoJSON object in EPSG:4326 (Polygon, MultiPolygon,
+    Feature or FeatureCollection) used to clip the rasters. When ``end_date``
+    is omitted the API uses ``start_date`` (single date).
+    """
+    polygon: dict[str, Any]
+    start_date: date
+    end_date: Optional[date] = None
+    workspace: str
+    store: str
+    temporality: Literal["daily", "monthly", "annual"] = "daily"
+
+
+class AdminAreaLayer(BaseModel):
+    """Layer with administrative areas returned by /geoserver/admin-areas/layers.
+
+    ``prefix`` (country name, ISO2 or region) and ``level`` (0 = country,
+    1 = admin 1, 2 = admin 2, ...) are None when the layer name does not follow
+    the ``{prefix}_adm{level}`` convention.
+    """
+    layer: str
+    prefix: Optional[str] = None
+    level: Optional[int] = None
+
+
 class ClipGeoserverSource(BaseModel):
     """Fuente vectorial GeoServer para recorte (clip) de rasters."""
     workspace: str

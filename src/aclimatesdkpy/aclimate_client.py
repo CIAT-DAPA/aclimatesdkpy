@@ -16,6 +16,7 @@ from aclimatesdkpy.aclimate_auth_error import AClimateAuthError
 from aclimatesdkpy.aclimate_models import (
     Admin1,
     Admin2,
+    AdminAreaLayer,
     ClimateHistoricalDateRecord,
     ClimateHistoricalIndicatorRecord,
     ClimateHistoricalMonthRecord,
@@ -33,6 +34,7 @@ from aclimatesdkpy.aclimate_models import (
     PeriodResponse,
     PointDataRequest,
     PointDataResponse,
+    PolygonDataRequest,
     RasterExportRequest,
     TokenResponse,
 )
@@ -299,6 +301,76 @@ class AClimateClient:
         if response.status_code >= 400:
             raise AClimateAPIError(response.status_code, response.text[:500])
         return response.content
+
+    async def post_geoserver_polygon_data(self, request: PolygonDataRequest) -> bytes:
+        """Get the rasters of a date range clipped by a polygon.
+
+        Makes a POST to /geoserver/polygon-data and returns the raw binary
+        content of a ZIP file with one clipped GeoTIFF per date (``{date}.tif``).
+
+        Args:
+            request: Polygon (GeoJSON), date range, workspace, store and temporality.
+
+        Returns:
+            Bytes of the ZIP file returned by the API.
+
+        Raises:
+            AClimateAPIError: If the API answers with an error status (e.g. 400
+                for an invalid polygon or 404 when there is no data).
+        """
+        assert self._http, "Client not initialized; use 'async with AClimateClient(...)'"
+        token = await self._ensure_token()
+        json_body = request.model_dump(mode="json")
+        response = await self._http.post(
+            f"{self.base_url}/geoserver/polygon-data",
+            json=json_body,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        # An expired or rejected token is refreshed once and the request is retried
+        if response.status_code == 401:
+            self._token = None
+            token = await self._ensure_token()
+            response = await self._http.post(
+                f"{self.base_url}/geoserver/polygon-data",
+                json=json_body,
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        # Any remaining error status is reported to the caller
+        if response.status_code >= 400:
+            raise AClimateAPIError(response.status_code, response.text[:500])
+        return response.content
+
+    async def get_geoserver_admin_layers(self) -> list[AdminAreaLayer]:
+        """Return the layers with administrative areas available in GeoServer.
+
+        Makes a GET to /geoserver/admin-areas/layers.
+
+        Returns:
+            List of ``AdminAreaLayer`` (layer name, prefix and administrative level).
+        """
+        return TypeAdapter(list[AdminAreaLayer]).validate_python(await self.get("/geoserver/admin-areas/layers"))
+
+    async def get_geoserver_admin_area_polygon(self, layer: str, description: str) -> dict[str, Any]:
+        """Get the polygons of an administrative area as GeoJSON.
+
+        Makes a GET to /geoserver/admin-areas/polygon. The description is searched
+        (partial match, case-insensitive) in every text attribute of the layer.
+
+        Args:
+            layer: Layer name, as returned by ``get_geoserver_admin_layers``
+                (e.g. ``"colombia_adm1"``).
+            description: Text to search in the attributes of the layer
+                (e.g. ``"Valle del Cauca"``).
+
+        Returns:
+            GeoJSON FeatureCollection (EPSG:4326) with every polygon that matches.
+            It can be used as ``polygon`` of ``PolygonDataRequest``.
+
+        Raises:
+            AClimateAPIError: If the API answers with an error status (e.g. 404
+                when the layer does not exist or no polygon matches).
+        """
+        return await self.get("/geoserver/admin-areas/polygon", layer=layer, description=description)
 
     async def get_available_periods(self, location_id: int) -> list[PeriodResponse]:
         return TypeAdapter(list[PeriodResponse]).validate_python(await self.get("/periods/available", location_id=location_id))
