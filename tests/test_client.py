@@ -836,3 +836,172 @@ async def test_get_countries_returns_climate_and_indicator_configuration(client_
     colombia = result[1]
     assert colombia.conf_climate == []
     assert colombia.conf_indicator == []
+
+
+POLYGON_GEOJSON = {
+    "type": "Polygon",
+    "coordinates": [[[-86.6, 12.9], [-86.1, 12.9], [-86.1, 13.4], [-86.6, 13.4], [-86.6, 12.9]]],
+}
+
+
+@pytest.mark.asyncio
+async def test_post_geoserver_polygon_data_sends_request_and_returns_bytes(client_module):
+    """Validates the geoserver polygon-data convenience method."""
+    fake_http = FakeAsyncHTTPClient(
+        post_responses=[FakeResponse(200, content=b"fake-zip-binary-content")]
+    )
+    client = client_module.AClimateClient(base_url="https://example.test", access_token="test-token")
+    client._http = fake_http
+
+    request = client_module.PolygonDataRequest(
+        polygon=POLYGON_GEOJSON,
+        start_date="2024-01-01",
+        end_date="2024-01-03",
+        workspace="climate_historical_daily",
+        store="climate_historical_daily_ni_prec",
+    )
+
+    result = await client.post_geoserver_polygon_data(request)
+
+    assert result == b"fake-zip-binary-content"
+    assert len(fake_http.post_calls) == 1
+    assert fake_http.post_calls[0]["url"] == "https://example.test/geoserver/polygon-data"
+    assert fake_http.post_calls[0]["headers"] == {"Authorization": "Bearer test-token"}
+    assert fake_http.post_calls[0]["json"] == {
+        "polygon": POLYGON_GEOJSON,
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-03",
+        "workspace": "climate_historical_daily",
+        "store": "climate_historical_daily_ni_prec",
+        "temporality": "daily",
+    }
+
+
+@pytest.mark.asyncio
+async def test_post_geoserver_polygon_data_refreshes_token_on_401(client_module):
+    """Validates token refresh and retry after a 401 on polygon-data."""
+    fake_http = FakeAsyncHTTPClient(
+        post_responses=[
+            FakeResponse(401, text="Unauthorized"),
+            FakeResponse(200, content=b"refreshed-content"),
+        ]
+    )
+    client = client_module.AClimateClient(base_url="https://example.test", access_token="expired-token")
+    client._http = fake_http
+
+    async def fake_fetch_token() -> None:
+        client._token = "refreshed-token"
+        client._token_expires_at = time.monotonic() + 3600
+
+    client._fetch_token = fake_fetch_token
+
+    request = client_module.PolygonDataRequest(
+        polygon=POLYGON_GEOJSON,
+        start_date="2024-01-01",
+        workspace="aclimate",
+        store="precipitation",
+    )
+
+    result = await client.post_geoserver_polygon_data(request)
+
+    assert result == b"refreshed-content"
+    assert len(fake_http.post_calls) == 2
+    assert fake_http.post_calls[0]["headers"] == {"Authorization": "Bearer expired-token"}
+    assert fake_http.post_calls[1]["headers"] == {"Authorization": "Bearer refreshed-token"}
+    # end_date is optional: it is sent as null and the API defaults it to start_date
+    assert fake_http.post_calls[1]["json"]["end_date"] is None
+
+
+@pytest.mark.asyncio
+async def test_post_geoserver_polygon_data_raises_api_error_on_failure(client_module):
+    """Validates API error handling for failed polygon-data requests."""
+    fake_http = FakeAsyncHTTPClient(
+        post_responses=[FakeResponse(400, text="Invalid polygon: polygon geometry is empty or not valid")]
+    )
+    client = client_module.AClimateClient(base_url="https://example.test", access_token="token")
+    client._http = fake_http
+
+    request = client_module.PolygonDataRequest(
+        polygon={"type": "Point", "coordinates": [-86.5, 12.5]},
+        start_date="2024-01-01",
+        end_date="2024-01-01",
+        workspace="aclimate",
+        store="precipitation",
+    )
+
+    with pytest.raises(client_module.AClimateAPIError) as exc_info:
+        await client.post_geoserver_polygon_data(request)
+
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_get_geoserver_admin_layers_returns_typed_layers(client_module):
+    """Validates that get_geoserver_admin_layers parses the layers and their levels."""
+    raw_response = [
+        {"layer": "colombia_adm1", "prefix": "colombia", "level": 1},
+        {"layer": "sat_amazonia_area_drenajes", "prefix": None, "level": None},
+    ]
+
+    client = client_module.AClimateClient()
+    client.get = AsyncMock(return_value=raw_response)
+
+    result = await client.get_geoserver_admin_layers()
+
+    client.get.assert_awaited_once_with("/geoserver/admin-areas/layers")
+    assert len(result) == 2
+    assert isinstance(result[0], client_module.AdminAreaLayer)
+    assert (result[0].layer, result[0].prefix, result[0].level) == ("colombia_adm1", "colombia", 1)
+    # Layers outside the naming convention have no prefix and no level
+    assert result[1].prefix is None
+    assert result[1].level is None
+
+
+@pytest.mark.asyncio
+async def test_get_geoserver_admin_area_polygon_sends_params_and_returns_geojson(client_module):
+    """Validates the request sent to /geoserver/admin-areas/polygon and the GeoJSON returned."""
+    feature_collection = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "id": "colombia_adm1.31",
+                "geometry": POLYGON_GEOJSON,
+                "properties": {"ADM1_ES": "Valle del Cauca", "ADM1_PCODE": "CO76"},
+            }
+        ],
+    }
+    fake_http = FakeAsyncHTTPClient(get_responses=[FakeResponse(200, feature_collection)])
+    client = client_module.AClimateClient(base_url="https://example.test", access_token="test-token")
+    client._http = fake_http
+
+    result = await client.get_geoserver_admin_area_polygon("colombia_adm1", "Valle del Cauca")
+
+    assert result == feature_collection
+    assert fake_http.get_calls[0]["url"] == "https://example.test/geoserver/admin-areas/polygon"
+    assert fake_http.get_calls[0]["params"] == {"layer": "colombia_adm1", "description": "Valle del Cauca"}
+    assert fake_http.get_calls[0]["headers"] == {"Authorization": "Bearer test-token"}
+
+    # The GeoJSON returned is accepted as the polygon of a polygon-data request
+    request = client_module.PolygonDataRequest(
+        polygon=result,
+        start_date="2024-01-01",
+        workspace="climate_historical_daily",
+        store="climate_historical_daily_co_prec",
+    )
+    assert request.polygon["type"] == "FeatureCollection"
+
+
+@pytest.mark.asyncio
+async def test_get_geoserver_admin_area_polygon_raises_api_error_when_not_found(client_module):
+    """Validates API error handling when no polygon matches the description."""
+    fake_http = FakeAsyncHTTPClient(
+        get_responses=[FakeResponse(404, text="No polygon found in layer 'colombia_adm1' for description 'Atlantis'")]
+    )
+    client = client_module.AClimateClient(base_url="https://example.test", access_token="token")
+    client._http = fake_http
+
+    with pytest.raises(client_module.AClimateAPIError) as exc_info:
+        await client.get_geoserver_admin_area_polygon("colombia_adm1", "Atlantis")
+
+    assert exc_info.value.status_code == 404
